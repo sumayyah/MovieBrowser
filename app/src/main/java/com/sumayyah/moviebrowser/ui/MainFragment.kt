@@ -13,7 +13,9 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
+import com.sumayyah.moviebrowser.MainApplication
 import com.sumayyah.moviebrowser.R
+import javax.inject.Inject
 
 class MainFragment: Fragment() {
 
@@ -24,7 +26,15 @@ class MainFragment: Fragment() {
 
     private lateinit var adapter: GridAdapter
 
-    private val viewModel: MainViewModel by viewModels()
+    @Inject
+    lateinit var factory: MainViewModelFactory
+
+    private val viewModel: MainViewModel by viewModels { factory }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        (activity?.application as MainApplication).component.inject(this)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

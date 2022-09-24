@@ -4,12 +4,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sumayyah.moviebrowser.network.MovieApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class MainViewModel: ViewModel() {
+class MainViewModel(private val api: MovieApi): ViewModel() {
     private val uiStateInternal = MutableLiveData<UIState>().apply { postValue(UIState.EMPTY)}
     val uiState: LiveData<UIState> = uiStateInternal
 
