@@ -4,11 +4,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sumayyah.moviebrowser.model.Movie
 import com.sumayyah.moviebrowser.network.MovieApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 
 class MainViewModel(private val api: MovieApi): ViewModel() {
     private val uiStateInternal = MutableLiveData<UIState>().apply { postValue(UIState.EMPTY)}
@@ -24,10 +26,19 @@ class MainViewModel(private val api: MovieApi): ViewModel() {
         uiStateInternal.postValue(UIState.LOADING)
 
         viewModelScope.launch {
-            delay(3000)
-            val newState = UIState.SUCCESS(listOf(1,2,3,4,5,6,7,8,9))
+           withContext(Dispatchers.IO) {
+               try {
+                   val response = api.getTrending()
+                   val list = response.results
 
-            uiStateInternal.postValue(newState)
+                   Timber.log(1, "Sumi got ${list.size} movies")
+                   uiStateInternal.postValue(UIState.SUCCESS(response.results))
+               } catch (e: Throwable) {
+                   Timber.log(1, "Sumi Error $e")
+                   uiStateInternal.postValue(UIState.ERROR)
+               }
+           }
+
         }
     }
 
@@ -41,6 +52,6 @@ class MainViewModel(private val api: MovieApi): ViewModel() {
         object EMPTY: UIState()
         object ERROR: UIState()
         object LOADING: UIState()
-        data class SUCCESS(val list: List<Int>): UIState()
+        data class SUCCESS(val list: List<Movie>): UIState()
     }
 }

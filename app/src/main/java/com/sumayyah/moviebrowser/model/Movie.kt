@@ -17,5 +17,6 @@ data class Movie(
     @SerializedName("release_date"      ) var releaseDate      : String?        = null,
     @SerializedName("video"             ) var video            : Boolean?       = null,
     @SerializedName("vote_average"      ) var voteAverage      : Double?        = null,
-    @SerializedName("vote_count"        ) var voteCount        : Int?           = null
+    @SerializedName("vote_count"        ) var voteCount        : Int?           = null,
+    var gridPosterUrl: String? = null
 )

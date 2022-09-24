@@ -5,8 +5,10 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.GridLayoutManager
@@ -15,6 +17,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.bumptech.glide.Glide
 import com.sumayyah.moviebrowser.MainApplication
 import com.sumayyah.moviebrowser.R
+import com.sumayyah.moviebrowser.model.Movie
 import javax.inject.Inject
 
 class MainFragment: Fragment() {
@@ -56,7 +59,7 @@ class MainFragment: Fragment() {
 
         adapter = GridAdapter(
             requireContext(),
-            listOf(1,2,3,4,5,6,7,8,9,10),
+            listOf(),
             ::itemClicked
         )
 
@@ -73,7 +76,7 @@ class MainFragment: Fragment() {
     private fun setObserver() {
         viewModel.uiState.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is MainViewModel.UIState.SUCCESS -> showSuccessState()
+                is MainViewModel.UIState.SUCCESS -> showSuccessState(state.list)
                 is MainViewModel.UIState.ERROR -> showErrorState()
                 is MainViewModel.UIState.LOADING -> showLoadingState()
             }
@@ -87,11 +90,13 @@ class MainFragment: Fragment() {
 
     }
 
-    private fun showSuccessState() {
+    private fun showSuccessState(newList: List<Movie>) {
         errorView.visibility = View.GONE
         contentView.visibility = View.VISIBLE
         progressView.visibility = View.GONE
         swipeView.isRefreshing = false
+
+        adapter.swapData(newList)
     }
 
     private fun showErrorState() {
@@ -101,35 +106,45 @@ class MainFragment: Fragment() {
         swipeView.isRefreshing = false
     }
 
-    private fun itemClicked(id: String?) {
+    private fun itemClicked(id: Int?) {
         // notify the ViewModel and navigate if necessary
     }
 
     class GridAdapter(
-        val context: Context,
-        var list: List<Int>,
-        val clickListener : (String?) -> Unit
-    ) : RecyclerView.Adapter<GridAdapter.GifViewHolder>() {
+        private val context: Context,
+        private var list: List<Movie>,
+        private val clickListener : (Int?) -> Unit
+    ) : RecyclerView.Adapter<GridAdapter.MovieViewHolder>() {
 
-        class GifViewHolder(private val view: View, val context: Context): RecyclerView.ViewHolder(view) {
-            fun bind(clicklistener: (String?) -> Unit) {
-               //TODO
+        class MovieViewHolder(private val view: View, val context: Context): RecyclerView.ViewHolder(view) {
+            private val posterView = view.findViewById<ImageView>(R.id.poster)
+            fun bind(clicklistener: (Int?) -> Unit, movie: Movie) {
+
+                movie.posterPath?.let {
+                    //TODO use config api to get baseurl and width
+                    val url = "http://image.tmdb.org/t/p/w92"+it.toUri()
+                    Glide.with(context)
+                        .load(url)
+                        .into(posterView)
+                }
+
+                posterView.setOnClickListener { clicklistener(movie.id) }
             }
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GifViewHolder {
-            return GifViewHolder(LayoutInflater.from(context).inflate(R.layout.layout_grid_item, parent, false), context)
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MovieViewHolder {
+            return MovieViewHolder(LayoutInflater.from(context).inflate(R.layout.layout_grid_item, parent, false), context)
         }
 
-        override fun onBindViewHolder(holder: GifViewHolder, position: Int) {
-            holder.bind(clickListener)
+        override fun onBindViewHolder(holder: MovieViewHolder, position: Int) {
+            holder.bind(clickListener, list[position])
         }
 
         override fun getItemCount(): Int {
             return list.size
         }
 
-        fun swapData(newList: List<Int>) {
+        fun swapData(newList: List<Movie>) {
             list = newList
         }
     }

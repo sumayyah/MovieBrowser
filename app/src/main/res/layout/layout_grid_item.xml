@@ -14,7 +14,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:src="@drawable/ic_launcher_background"
-        android:src="@drawable/ic_launcher_background"/>
+        tools:src="@drawable/ic_launcher_background"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
