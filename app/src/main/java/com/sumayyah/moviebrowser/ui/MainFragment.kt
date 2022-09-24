@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -23,6 +24,8 @@ class MainFragment: Fragment() {
 
     private lateinit var adapter: GridAdapter
 
+    private val viewModel: MainViewModel by viewModels()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -35,6 +38,8 @@ class MainFragment: Fragment() {
         contentView = view.findViewById(R.id.content)
         progressView = view.findViewById(R.id.loading_indicator)
         swipeView = view.findViewById(R.id.swipeContainer)
+
+        setObserver()
 
         //Setup adapter
         contentView = view.findViewById(R.id.content)
@@ -52,9 +57,17 @@ class MainFragment: Fragment() {
         //TODO
         swipeView.setOnRefreshListener { }
 
-        showSuccessState()
-
         return view
+    }
+
+    private fun setObserver() {
+        viewModel.uiState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is MainViewModel.UIState.SUCCESS -> showSuccessState()
+                is MainViewModel.UIState.ERROR -> showErrorState()
+                is MainViewModel.UIState.LOADING -> showLoadingState()
+            }
+        }
     }
 
     private fun showLoadingState() {
