@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.net.toUri
@@ -18,6 +17,7 @@ import com.bumptech.glide.Glide
 import com.sumayyah.moviebrowser.MainApplication
 import com.sumayyah.moviebrowser.R
 import com.sumayyah.moviebrowser.model.Movie
+import kotlinx.android.synthetic.main.layout_grid_item.view.*
 import javax.inject.Inject
 
 class MainFragment: Fragment() {
@@ -55,7 +55,6 @@ class MainFragment: Fragment() {
         setObserver()
 
         //Setup adapter
-        contentView = view.findViewById(R.id.content)
 
         adapter = GridAdapter(
             requireContext(),
@@ -64,6 +63,7 @@ class MainFragment: Fragment() {
         )
 
         contentView.adapter = adapter
+        //TODO flexible span count based on screen size
         contentView.layoutManager = GridLayoutManager(activity, 3)
 
         //Setup swipe layout
@@ -117,18 +117,16 @@ class MainFragment: Fragment() {
     ) : RecyclerView.Adapter<GridAdapter.MovieViewHolder>() {
 
         class MovieViewHolder(private val view: View, val context: Context): RecyclerView.ViewHolder(view) {
-            private val posterView = view.findViewById<ImageView>(R.id.poster)
             fun bind(clicklistener: (Int?) -> Unit, movie: Movie) {
-
                 movie.posterPath?.let {
                     //TODO use config api to get baseurl and width
                     val url = "http://image.tmdb.org/t/p/w92"+it.toUri()
                     Glide.with(context)
                         .load(url)
-                        .into(posterView)
+                        .into(view.poster)
                 }
 
-                posterView.setOnClickListener { clicklistener(movie.id) }
+                view.poster.setOnClickListener { clicklistener(movie.id) }
             }
         }
 
