@@ -12,11 +12,12 @@ interface MovieApi {
         @Query("page") page: Int? = 1,
     ): MovieResponse
 
-    @GET("/search/movie")
+    @GET("/3/search/movie")
     suspend fun search(
         //TODO api key should be obfuscated
         @Query("api_key") apiKey: String = "d0bfa2d663af7a94e515085e33ab9615",
         @Query("page") page: Int? = 1,
-        @Query("language") language: String? = "en"
+        @Query("language") language: String? = "en",
+        @Query("query") query: String
     ): MovieResponse
 }

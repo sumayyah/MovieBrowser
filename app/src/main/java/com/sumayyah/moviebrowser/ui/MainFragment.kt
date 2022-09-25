@@ -2,10 +2,12 @@ package com.sumayyah.moviebrowser.ui
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
+import android.widget.SearchView
 import android.widget.TextView
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
@@ -25,6 +27,7 @@ class MainFragment: Fragment() {
     private lateinit var errorView: TextView
     private lateinit var progressView: ProgressBar
     private lateinit var contentView: RecyclerView
+    private lateinit var searchView: SearchView
     private lateinit var swipeView: SwipeRefreshLayout
 
     private lateinit var adapter: GridAdapter
@@ -50,12 +53,12 @@ class MainFragment: Fragment() {
         errorView = view.findViewById(R.id.errorView)
         contentView = view.findViewById(R.id.content)
         progressView = view.findViewById(R.id.loading_indicator)
+        searchView = view.findViewById(R.id.searchView)
         swipeView = view.findViewById(R.id.swipeContainer)
 
         setObserver()
 
         //Setup adapter
-
         adapter = GridAdapter(
             requireContext(),
             listOf(),
@@ -70,11 +73,15 @@ class MainFragment: Fragment() {
         //TODO
         swipeView.setOnRefreshListener { }
 
+        searchView.queryHint = "search for a movie"
+        searchView.setOnQueryTextListener(queryTextListener)
+
         return view
     }
 
     private fun setObserver() {
         viewModel.uiState.observe(viewLifecycleOwner) { state ->
+            Log.d("Sumi", "New State observed $state")
             when (state) {
                 is MainViewModel.UIState.SUCCESS -> showSuccessState(state.list)
                 is MainViewModel.UIState.ERROR -> showErrorState()
@@ -97,6 +104,7 @@ class MainFragment: Fragment() {
         swipeView.isRefreshing = false
 
         adapter.swapData(newList)
+        adapter.notifyDataSetChanged()
     }
 
     private fun showErrorState() {
@@ -108,6 +116,19 @@ class MainFragment: Fragment() {
 
     private fun itemClicked(id: Int?) {
         // notify the ViewModel and navigate if necessary
+    }
+
+    // Search bar input handler
+    private val queryTextListener = object : SearchView.OnQueryTextListener {
+        override fun onQueryTextSubmit(query: String?): Boolean {
+            return false
+        }
+
+        override fun onQueryTextChange(newText: String?): Boolean {
+            //note - this fires on rotation with the existing text
+            viewModel.newSearchInput(newText)
+            return false
+        }
     }
 
     class GridAdapter(
