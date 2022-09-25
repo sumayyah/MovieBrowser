@@ -21,7 +21,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
-        android:text="Oops! something went wrong"
+        android:text="Oops! Something went wrong. Refresh to try again."
         android:padding="30dp"
         android:layout_marginTop="?android:attr/actionBarSize"
         app:layout_constraintLeft_toLeftOf="parent"

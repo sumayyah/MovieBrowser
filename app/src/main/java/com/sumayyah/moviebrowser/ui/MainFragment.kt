@@ -75,13 +75,16 @@ class MainFragment: Fragment() {
 
         searchView.queryHint = "search for a movie"
         searchView.setOnQueryTextListener(queryTextListener)
+        searchView.setOnCloseListener {
+            viewModel.searchClosed()
+            false
+        }
 
         return view
     }
 
     private fun setObserver() {
         viewModel.uiState.observe(viewLifecycleOwner) { state ->
-            Log.d("Sumi", "New State observed $state")
             when (state) {
                 is MainViewModel.UIState.SUCCESS -> showSuccessState(state.list)
                 is MainViewModel.UIState.ERROR -> showErrorState()

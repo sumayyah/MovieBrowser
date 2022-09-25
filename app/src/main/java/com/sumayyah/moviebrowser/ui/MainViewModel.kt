@@ -15,6 +15,8 @@ class MainViewModel(private val api: MovieApi): ViewModel() {
     private val uiStateInternal = MutableLiveData<UIState>().apply { postValue(UIState.EMPTY)}
     val uiState: LiveData<UIState> = uiStateInternal
 
+    private val trendingMap = mutableMapOf<Int, Movie>()
+
     private var currentJob: Job = Job()
 
     private var currentQuery = ""
@@ -32,12 +34,15 @@ class MainViewModel(private val api: MovieApi): ViewModel() {
            withContext(Dispatchers.IO) {
                try {
                    val response = api.getTrending()
-                   val list = response.results
-
-                   Timber.log(1, "Sumi got ${list.size} movies")
                    uiStateInternal.postValue(UIState.SUCCESS(response.results))
+
+                   //Save items in map
+                   response.results.forEach {  movie ->
+                       if (movie.id != null) {
+                           trendingMap[movie.id!!] = movie
+                       }
+                   }
                } catch (e: Throwable) {
-                   Timber.log(1, "Sumi Error $e")
                    uiStateInternal.postValue(UIState.ERROR)
                }
            }
@@ -52,8 +57,11 @@ class MainViewModel(private val api: MovieApi): ViewModel() {
 
     // Fire search request
     fun newSearchInput(query: String?) {
-        Log.d("Sumi", "User typed in $query")
         executeSearch(query)
+    }
+
+    fun searchClosed() {
+        uiStateInternal.value = UIState.SUCCESS(trendingMap.values.toList())
     }
 
     private fun executeSearch(query: String?) {
