@@ -17,8 +17,6 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
     private val uiStateInternal = MutableLiveData<UIState>().apply { postValue(UIState.EMPTY)}
     val uiState: LiveData<UIState> = uiStateInternal
 
-    private val trendingMap = mutableMapOf<Int, Movie>()
-
     private var currentJob: Job = Job()
 
     private var currentQuery = ""
@@ -29,12 +27,10 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
 
     private fun fetchFlowData() {
         uiStateInternal.postValue(UIState.LOADING)
-        Log.d("Sumi", "About to launch flow")
 
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 repository.getTrendingMovies().collect {
-                    Log.d("Sumi", "Got a flow result $it")
 
                     if (it.isSuccessful) {
                         val response = it.body()
@@ -42,12 +38,8 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
                         list.forEach { movie->
                             movie.gridPosterUrl = repository.imageBaseUrlStr + movie.posterPath
                         }
-                        Log.d("Sumi", "Success$ got ${list.size} items")
-
                         uiStateInternal.postValue(UIState.SUCCESS(list))
                     } else {
-                        Log.d("Sumi", "Error ${it.errorBody()}")
-
                         uiStateInternal.postValue(UIState.ERROR)
                     }
                 }
@@ -55,35 +47,6 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
 
         }
     }
-
-    // Kick off api fetch via repository
-    // Map repository response to UIState
-//    private fun fetchData() {
-//        uiStateInternal.postValue(UIState.LOADING)
-//
-//        viewModelScope.launch {
-//           withContext(Dispatchers.IO) {
-//               try {
-//                   val response = api.getTrending()
-//                   val list = response.results
-//                   list.forEach {
-//                       it.gridPosterUrl = repository.imageBaseUrlStr + it.posterPath
-//                   }
-//                   uiStateInternal.postValue(UIState.SUCCESS(list))
-//
-//                   //Save items in map
-//                   list.forEach {  movie ->
-//                       if (movie.id != null) {
-//                           trendingMap[movie.id!!] = movie
-//                       }
-//                   }
-//               } catch (e: Throwable) {
-//                   uiStateInternal.postValue(UIState.ERROR)
-//               }
-//           }
-//
-//        }
-//    }
 
     // Reload data on swipe to refresh
     fun userSwipeAction() {
@@ -96,7 +59,7 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
     }
 
     fun searchClosed() {
-        uiStateInternal.value = UIState.SUCCESS(trendingMap.values.toList())
+        uiStateInternal.value = UIState.SUCCESS(repository.trendingMap.values.toList())
     }
 
     private fun executeSearch(query: String?) {

@@ -1,6 +1,5 @@
 package com.sumayyah.moviebrowser.repository
 
-import android.net.Network
 import android.util.Log
 import com.sumayyah.moviebrowser.model.Movie
 import com.sumayyah.moviebrowser.model.MovieResponse
@@ -17,6 +16,8 @@ class MovieRepository(private val api: MovieApi) {
 
     private val job = Job()
     private val scope = CoroutineScope(job + Dispatchers.IO)
+
+    val trendingMap = mutableMapOf<Int, Movie>()
 
     init {
         // Fetch configuration data
@@ -35,9 +36,22 @@ class MovieRepository(private val api: MovieApi) {
         }
     }
 
+
     suspend fun getTrendingMovies() : Flow<Response<MovieResponse>> {
         return flow{
             emit(api.getTrending())
+        }.onEach {
+            if (it.isSuccessful) {
+                updateMemoryCache(it.body()?.results)
+            }
         }
+    }
+
+    private fun updateMemoryCache(list: List<Movie>?) {
+        list?.forEach {  movie ->
+            if (movie.id != null) {
+               trendingMap[movie.id!!] = movie
+           }
+       }
     }
 }
