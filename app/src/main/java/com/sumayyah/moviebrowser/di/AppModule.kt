@@ -3,6 +3,7 @@ package com.sumayyah.moviebrowser.di
 import android.app.Application
 import com.sumayyah.moviebrowser.BuildConfig
 import com.sumayyah.moviebrowser.network.MovieApi
+import com.sumayyah.moviebrowser.repository.MovieRepository
 import com.sumayyah.moviebrowser.ui.MainViewModelFactory
 import dagger.Module
 import dagger.Provides
@@ -54,7 +55,13 @@ class AppModule(val application: Application) {
 
     @Provides
     @Singleton
-    fun provideMainViewModelFactory(api: MovieApi): MainViewModelFactory {
-        return MainViewModelFactory(api)
+    fun provideRepository(api: MovieApi): MovieRepository {
+        return MovieRepository(api)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMainViewModelFactory(api: MovieApi, repository: MovieRepository): MainViewModelFactory {
+        return MainViewModelFactory(api, repository)
     }
 }

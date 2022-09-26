@@ -1,5 +1,6 @@
 package com.sumayyah.moviebrowser.network
 
+import com.sumayyah.moviebrowser.model.Configuration
 import com.sumayyah.moviebrowser.model.MovieResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
@@ -20,4 +21,9 @@ interface MovieApi {
         @Query("language") language: String? = "en",
         @Query("query") query: String
     ): MovieResponse
+
+    @GET("/3/configuration")
+    suspend fun getConfig(
+        @Query("api_key") apiKey: String = "d0bfa2d663af7a94e515085e33ab9615",
+        ): Configuration
 }

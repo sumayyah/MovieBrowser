@@ -7,11 +7,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sumayyah.moviebrowser.model.Movie
 import com.sumayyah.moviebrowser.network.MovieApi
+import com.sumayyah.moviebrowser.repository.MovieRepository
 import kotlinx.coroutines.*
 import timber.log.Timber
 import java.lang.Exception
 
-class MainViewModel(private val api: MovieApi): ViewModel() {
+class MainViewModel(private val api: MovieApi, private val repository: MovieRepository): ViewModel() {
     private val uiStateInternal = MutableLiveData<UIState>().apply { postValue(UIState.EMPTY)}
     val uiState: LiveData<UIState> = uiStateInternal
 
@@ -34,10 +35,14 @@ class MainViewModel(private val api: MovieApi): ViewModel() {
            withContext(Dispatchers.IO) {
                try {
                    val response = api.getTrending()
-                   uiStateInternal.postValue(UIState.SUCCESS(response.results))
+                   val list = response.results
+                   list.forEach {
+                       it.gridPosterUrl = repository.imageBaseUrlStr + it.posterPath
+                   }
+                   uiStateInternal.postValue(UIState.SUCCESS(list))
 
                    //Save items in map
-                   response.results.forEach {  movie ->
+                   list.forEach {  movie ->
                        if (movie.id != null) {
                            trendingMap[movie.id!!] = movie
                        }

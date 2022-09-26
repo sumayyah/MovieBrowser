@@ -143,8 +143,7 @@ class MainFragment: Fragment() {
         class MovieViewHolder(private val view: View, val context: Context): RecyclerView.ViewHolder(view) {
             fun bind(clicklistener: (Int?) -> Unit, movie: Movie) {
                 movie.posterPath?.let {
-                    //TODO use config api to get baseurl and width
-                    val url = "http://image.tmdb.org/t/p/w92"+it.toUri()
+                    val url = movie.gridPosterUrl?.toUri()
                     Glide.with(context)
                         .load(url)
                         .into(view.poster)
