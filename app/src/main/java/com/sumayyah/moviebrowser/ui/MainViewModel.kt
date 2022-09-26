@@ -9,6 +9,7 @@ import com.sumayyah.moviebrowser.model.Movie
 import com.sumayyah.moviebrowser.network.MovieApi
 import com.sumayyah.moviebrowser.repository.MovieRepository
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collect
 import timber.log.Timber
 import java.lang.Exception
 
@@ -23,41 +24,70 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
     private var currentQuery = ""
 
     init {
-        fetchData()
+        fetchFlowData()
     }
 
-    // Kick off api fetch via repository
-    // Map repository response to UIState
-    private fun fetchData() {
+    private fun fetchFlowData() {
         uiStateInternal.postValue(UIState.LOADING)
+        Log.d("Sumi", "About to launch flow")
 
         viewModelScope.launch {
-           withContext(Dispatchers.IO) {
-               try {
-                   val response = api.getTrending()
-                   val list = response.results
-                   list.forEach {
-                       it.gridPosterUrl = repository.imageBaseUrlStr + it.posterPath
-                   }
-                   uiStateInternal.postValue(UIState.SUCCESS(list))
+            withContext(Dispatchers.IO) {
+                repository.getTrendingMovies().collect {
+                    Log.d("Sumi", "Got a flow result $it")
 
-                   //Save items in map
-                   list.forEach {  movie ->
-                       if (movie.id != null) {
-                           trendingMap[movie.id!!] = movie
-                       }
-                   }
-               } catch (e: Throwable) {
-                   uiStateInternal.postValue(UIState.ERROR)
-               }
-           }
+                    if (it.isSuccessful) {
+                        val response = it.body()
+                        val list = response?.results ?: listOf<Movie>()
+                        list.forEach { movie->
+                            movie.gridPosterUrl = repository.imageBaseUrlStr + movie.posterPath
+                        }
+                        Log.d("Sumi", "Success$ got ${list.size} items")
+
+                        uiStateInternal.postValue(UIState.SUCCESS(list))
+                    } else {
+                        Log.d("Sumi", "Error ${it.errorBody()}")
+
+                        uiStateInternal.postValue(UIState.ERROR)
+                    }
+                }
+            }
 
         }
     }
 
+    // Kick off api fetch via repository
+    // Map repository response to UIState
+//    private fun fetchData() {
+//        uiStateInternal.postValue(UIState.LOADING)
+//
+//        viewModelScope.launch {
+//           withContext(Dispatchers.IO) {
+//               try {
+//                   val response = api.getTrending()
+//                   val list = response.results
+//                   list.forEach {
+//                       it.gridPosterUrl = repository.imageBaseUrlStr + it.posterPath
+//                   }
+//                   uiStateInternal.postValue(UIState.SUCCESS(list))
+//
+//                   //Save items in map
+//                   list.forEach {  movie ->
+//                       if (movie.id != null) {
+//                           trendingMap[movie.id!!] = movie
+//                       }
+//                   }
+//               } catch (e: Throwable) {
+//                   uiStateInternal.postValue(UIState.ERROR)
+//               }
+//           }
+//
+//        }
+//    }
+
     // Reload data on swipe to refresh
     fun userSwipeAction() {
-        fetchData()
+        fetchFlowData()
     }
 
     // Fire search request

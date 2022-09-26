@@ -71,7 +71,7 @@ class MainFragment: Fragment() {
 
         //Setup swipe layout
         //TODO
-        swipeView.setOnRefreshListener { }
+        swipeView.setOnRefreshListener { viewModel.userSwipeAction() }
 
         searchView.queryHint = "search for a movie"
         searchView.setOnQueryTextListener(queryTextListener)
