@@ -1,6 +1,5 @@
 package com.sumayyah.moviebrowser.repository
 
-import android.util.Log
 import com.sumayyah.moviebrowser.model.Movie
 import com.sumayyah.moviebrowser.model.MovieResponse
 import com.sumayyah.moviebrowser.network.MovieApi
@@ -20,7 +19,26 @@ class MovieRepository(private val api: MovieApi) {
     val trendingMap = mutableMapOf<Int, Movie>()
 
     init {
-        // Fetch configuration data
+        fetchConfigData()
+    }
+
+    suspend fun getTrendingMovies() : Flow<Response<MovieResponse>> {
+        return flow{
+            emit(api.getTrending())
+        }.onEach {
+            if (it.isSuccessful) {
+                updateMemoryCache(it.body()?.results)
+            }
+        }
+    }
+
+    suspend fun getSearchResult(query: String) : Flow<Response<MovieResponse>> {
+        return flow{
+            emit(api.search(query=query))
+        }.debounce(500)
+    }
+
+    private fun fetchConfigData() {
         scope.launch {
             try {
                 val config = api.getConfig()
@@ -32,17 +50,6 @@ class MovieRepository(private val api: MovieApi) {
             } catch (e: Throwable) {
                 // Api call didn't work! Hardcode it for now
                 imageBaseUrlStr = "http://image.tmdb.org/t/p/w92"
-            }
-        }
-    }
-
-
-    suspend fun getTrendingMovies() : Flow<Response<MovieResponse>> {
-        return flow{
-            emit(api.getTrending())
-        }.onEach {
-            if (it.isSuccessful) {
-                updateMemoryCache(it.body()?.results)
             }
         }
     }

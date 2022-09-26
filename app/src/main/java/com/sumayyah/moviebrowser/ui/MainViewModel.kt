@@ -1,19 +1,14 @@
 package com.sumayyah.moviebrowser.ui
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sumayyah.moviebrowser.model.Movie
-import com.sumayyah.moviebrowser.network.MovieApi
 import com.sumayyah.moviebrowser.repository.MovieRepository
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
-import timber.log.Timber
-import java.lang.Exception
 
-class MainViewModel(private val api: MovieApi, private val repository: MovieRepository): ViewModel() {
+class MainViewModel(private val repository: MovieRepository): ViewModel() {
     private val uiStateInternal = MutableLiveData<UIState>().apply { postValue(UIState.EMPTY)}
     val uiState: LiveData<UIState> = uiStateInternal
 
@@ -44,7 +39,6 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
                     }
                 }
             }
-
         }
     }
 
@@ -71,14 +65,17 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
         currentJob.cancel()
         currentJob = viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                delay(1000)
-                try {
-                    val response = api.search(query=query)
-                    uiStateInternal.postValue(UIState.SUCCESS(response.results))
-
-                } catch (e: Exception) {
-                    //TODO more specific search related error
-                    uiStateInternal.postValue(UIState.ERROR)
+                repository.getSearchResult(query).collect {
+                    if (it.isSuccessful) {
+                        val response = it.body()
+                        val list = response?.results ?: listOf<Movie>()
+                        list.forEach { movie->
+                            movie.gridPosterUrl = repository.imageBaseUrlStr + movie.posterPath
+                        }
+                        uiStateInternal.postValue(UIState.SUCCESS(list))
+                    } else {
+                        uiStateInternal.postValue(UIState.ERROR)
+                    }
                 }
             }
         }
