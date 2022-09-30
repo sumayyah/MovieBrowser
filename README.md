@@ -1,7 +1,7 @@
 #MovieBrowser
 
 ## Build tools & versions used
-I used Gradle version 4.2.1 and Kotlin 1.5.0
+I used Gradle version 4.2.1 and Kotlin 1.6.1
 
 Other dependencies:
 * Android Architecture Components + Jetpack (Navigation Components, Lifecycle, etc)
@@ -9,7 +9,6 @@ Other dependencies:
 * Dagger
 * Retrofit + Gson + Okhttp
 * Glide
-
 
 Import in Android Studio Chipmunk > Build > Run in either emulator or device
 
@@ -63,11 +62,17 @@ existing Dagger setup and domain models, the same Repository, any in-memory data
 
 ## Improvements I would have made with more time
 
-1) I would have added the detail view by creating a BottomSheetDialogFragment to render the view, passing in the id of the clicked Movie via navArgs. It would render UIStates defined by a DetailViewModel. The DetailViewModel would have relied on the Repository's in-memory cache to instantly access Movie object by id. Navigation components would manage the transitions between MainFragment and DetailFragment.
+1) I would have added the detail view by creating a BottomSheetDialogFragment to render the view, 
+passing in the id of the clicked Movie via navArgs. It would render UIStates defined by a DetailViewModel.
+The DetailViewModel would have relied on the Repository's in-memory cache to instantly access Movie object by id. 
+Navigation components would manage the transitions between MainFragment and DetailFragment.
+
 2) I would have made the GridAdapter's spanCount flexible, show we can show more columns in different screen sizes
-3) I would have built a more robust data management and caching layer. Ideally there would be an in-memory cache (ie a DAO class), and a DataSource class that will handle: data syncronization between network response and cache, returning the correct data for online/offline cases, transforming api response to any domain model, etc. The Repository would take the DataSource class as a dependency and map the reponses as StateFlows for any observers. 
 
-## Notes
+3) I would have built a more robust data management and caching layer. 
+Ideally there would be an in-memory cache (ie a DAO class), a disk caching strategy, and a DataSource class that will handle: 
+data synchronization between network response and cache, returning the correct data for online/offline cases, 
+transforming api response to any domain model, etc. The Repository would take the DataSource class as a 
+dependency and map the responses as StateFlows for any observers. 
 
-Aside from the imported dependencies, all code in this project is written by me.
 

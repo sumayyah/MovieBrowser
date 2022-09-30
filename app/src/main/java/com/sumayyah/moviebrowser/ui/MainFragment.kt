@@ -66,11 +66,10 @@ class MainFragment: Fragment() {
         )
 
         contentView.adapter = adapter
-        //TODO flexible span count based on screen size
+
+        //Note - in the future I'd make the spanCount flexible based on screen size
         contentView.layoutManager = GridLayoutManager(activity, 3)
 
-        //Setup swipe layout
-        //TODO
         swipeView.setOnRefreshListener { viewModel.userSwipeAction() }
 
         searchView.queryHint = "search for a movie"
