@@ -61,7 +61,7 @@ class AppModule(val application: Application) {
 
     @Provides
     @Singleton
-    fun provideMainViewModelFactory(api: MovieApi, repository: MovieRepository): MainViewModelFactory {
-        return MainViewModelFactory(api, repository)
+    fun provideMainViewModelFactory(repository: MovieRepository): MainViewModelFactory {
+        return MainViewModelFactory(repository)
     }
 }

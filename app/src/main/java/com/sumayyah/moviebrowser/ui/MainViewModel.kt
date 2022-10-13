@@ -1,63 +1,60 @@
 package com.sumayyah.moviebrowser.ui
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sumayyah.moviebrowser.model.Movie
-import com.sumayyah.moviebrowser.network.MovieApi
 import com.sumayyah.moviebrowser.repository.MovieRepository
 import kotlinx.coroutines.*
-import timber.log.Timber
-import java.lang.Exception
 
-class MainViewModel(private val api: MovieApi, private val repository: MovieRepository): ViewModel() {
-    private val uiStateInternal = MutableLiveData<UIState>().apply { postValue(UIState.EMPTY)}
+/**
+ * MainViewModel:
+ * - emits UIStates with all data necessary to render the state, and consumes user events
+ * - observes data stream emitted by Repository class, then maps it to LiveData for views
+ * - scopes all network calls to its lifecycle to prevent memory leaks
+ * - maintains in-memory livedata of user data so that configuration change or app background/foreground doesn't reload data
+ * - is scoped to the lifecyle of MainFragment instead of Activity (right now only MainFragment needs access to data)
+ * */
+class MainViewModel(private val repository: MovieRepository): ViewModel() {
+    private val uiStateInternal = MutableLiveData<UIState>().apply { postValue(UIState.LOADING)}
     val uiState: LiveData<UIState> = uiStateInternal
-
-    private val trendingMap = mutableMapOf<Int, Movie>()
 
     private var currentJob: Job = Job()
 
     private var currentQuery = ""
 
     init {
-        fetchData()
+        fetchTrendingData()
     }
 
-    // Kick off api fetch via repository
-    // Map repository response to UIState
-    private fun fetchData() {
+    private fun fetchTrendingData() {
         uiStateInternal.postValue(UIState.LOADING)
 
         viewModelScope.launch {
-           withContext(Dispatchers.IO) {
-               try {
-                   val response = api.getTrending()
-                   val list = response.results
-                   list.forEach {
-                       it.gridPosterUrl = repository.imageBaseUrlStr + it.posterPath
-                   }
-                   uiStateInternal.postValue(UIState.SUCCESS(list))
+            withContext(Dispatchers.IO) {
+                repository.getTrendingMovies().collect {
 
-                   //Save items in map
-                   list.forEach {  movie ->
-                       if (movie.id != null) {
-                           trendingMap[movie.id!!] = movie
-                       }
-                   }
-               } catch (e: Throwable) {
-                   uiStateInternal.postValue(UIState.ERROR)
-               }
-           }
+                    if (it.isSuccessful) {
+                        val response = it.body()
+                        val list = response?.results ?: listOf<Movie>()
 
+                        //Construct the image url for each poster
+                        list.forEach { movie->
+                            movie.gridPosterUrl = repository.imageBaseUrlStr + movie.posterPath
+                        }
+                        uiStateInternal.postValue(UIState.SUCCESS(list))
+                    } else {
+                        uiStateInternal.postValue(UIState.ERROR)
+                    }
+                }
+            }
         }
     }
 
     // Reload data on swipe to refresh
     fun userSwipeAction() {
-        fetchData()
+        fetchTrendingData()
     }
 
     // Fire search request
@@ -65,8 +62,9 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
         executeSearch(query)
     }
 
+    // Fired when user hits X button in search widget - just reload trending
     fun searchClosed() {
-        uiStateInternal.value = UIState.SUCCESS(trendingMap.values.toList())
+        uiStateInternal.value = UIState.SUCCESS(repository.trendingMap.values.toList())
     }
 
     private fun executeSearch(query: String?) {
@@ -75,17 +73,24 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
 
         currentQuery = query
 
+        // Cancel the previous search query before fetching the new one
         currentJob.cancel()
+
         currentJob = viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                delay(1000)
-                try {
-                    val response = api.search(query=query)
-                    uiStateInternal.postValue(UIState.SUCCESS(response.results))
+                repository.getSearchResult(query).collect {
+                    if (it.isSuccessful) {
+                        val response = it.body()
+                        val list = response?.results ?: listOf<Movie>()
 
-                } catch (e: Exception) {
-                    //TODO more specific search related error
-                    uiStateInternal.postValue(UIState.ERROR)
+                        //Construct the image url for each poster
+                        list.forEach { movie->
+                            movie.gridPosterUrl = repository.imageBaseUrlStr + movie.posterPath
+                        }
+                        uiStateInternal.postValue(UIState.SUCCESS(list))
+                    } else {
+                        uiStateInternal.postValue(UIState.ERROR)
+                    }
                 }
             }
         }
@@ -93,7 +98,6 @@ class MainViewModel(private val api: MovieApi, private val repository: MovieRepo
 
     // Define immutable view states
     sealed class UIState {
-        object EMPTY: UIState()
         object ERROR: UIState()
         object LOADING: UIState()
         data class SUCCESS(val list: List<Movie>): UIState()
